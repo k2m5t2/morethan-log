@@ -1,66 +1,51 @@
+import { useEffect } from "react"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { useRouter } from "next/router"
-import React, { useEffect, useState } from "react"
-import PostCard from "src/routes/Feed/PostList/PostCard"
-import { DEFAULT_CATEGORY } from "src/constants"
-import usePostsQuery from "src/hooks/usePostsQuery"
+import { getPosts } from "src/api/posts"
+import { queryKey } from "src/constants/queryKey"
+import { Post } from "src/types"
+import PostCard from "src/components/PostCard"
+import { StyledWrapper } from "./styles"
 
 type Props = {
-  q: string
+  category?: string
 }
 
-const PostList: React.FC<Props> = ({ q }) => {
+const PostList: React.FC<Props> = ({ category }) => {
   const router = useRouter()
-  const data = usePostsQuery()
-  const [filteredPosts, setFilteredPosts] = useState(data)
 
-  const currentTag = `${router.query.tag || ``}` || undefined
-  const currentCategory = `${router.query.category || ``}` || DEFAULT_CATEGORY
-  const currentOrder = `${router.query.order || ``}` || "desc"
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
+    queryKey.posts(category),
+    ({ pageParam }) => getPosts({ category, pageParam }),
+    {
+      getNextPageParam: (lastPage) => lastPage.nextPage,
+    }
+  )
 
   useEffect(() => {
-    setFilteredPosts(() => {
-      let newFilteredPosts = data
-      // keyword
-      newFilteredPosts = newFilteredPosts.filter((post) => {
-        const tagContent = post.tags ? post.tags.join(" ") : ""
-        const searchContent = post.title + post.summary + tagContent
-        return searchContent.toLowerCase().includes(q.toLowerCase())
-      })
-
-      // tag
-      if (currentTag) {
-        newFilteredPosts = newFilteredPosts.filter(
-          (post) => post && post.tags && post.tags.includes(currentTag)
-        )
+    if (data?.pages.length === 1) {
+      const firstPage = data.pages[0]
+      if (firstPage.posts.length === 0) {
+        router.push("/404")
       }
-
-      // category
-      if (currentCategory !== DEFAULT_CATEGORY) {
-        newFilteredPosts = newFilteredPosts.filter(
-          (post) =>
-            post && post.category && post.category.includes(currentCategory)
-        )
-      }
-      // order
-      if (currentOrder !== "desc") {
-        newFilteredPosts = newFilteredPosts.reverse()
-      }
-
-      return newFilteredPosts
-    })
-  }, [q, currentTag, currentCategory, currentOrder, setFilteredPosts])
+    }
+  }, [data, router]) // Add 'data' to the dependency array
 
   return (
-    <>
-      <div className="my-2">
-        {!filteredPosts.length && (
-          <p className="text-gray-500 dark:text-gray-300">Nothing! 😺</p>
-        )}
-        {filteredPosts.map((post) => (
-          <PostCard key={post.id} data={post} />
-        ))}
-      </div>
-    </>
+    <StyledWrapper>
+      {data?.pages.map((page, index) => (
+        <React.Fragment key={index}>
+          {page.posts.map((post: Post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </React.Fragment>
+      ))}
+      {hasNextPage && (
+        <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+          {isFetchingNextPage ? "Loading more..." : "Load More"}
+        </button>
+      )}
+    </StyledWrapper>
   )
 }
 
