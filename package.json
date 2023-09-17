@@ -14,6 +14,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@cloudflare/next-on-pages": "^1.6.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@radix-ui/colors": "^1.0.0",
