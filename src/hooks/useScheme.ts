@@ -28,7 +28,7 @@ const useScheme = (): [Scheme, SetScheme] => {
 
     const scheme = getCookie("scheme")
     setScheme(scheme === "light" ? "light" : "dark")
-  }, []) // Add an empty dependency array since the effect doesn't depend on any values
+  }, [])
 
   return [scheme, setScheme]
 }
