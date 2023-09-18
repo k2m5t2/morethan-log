@@ -9,7 +9,7 @@ import { GetStaticProps } from "next"
 import { dehydrate } from "@tanstack/react-query"
 import { filterPosts } from "src/libs/utils/notion"
 
-export const runtime = 'edge';
+export const runtime = 'experimental-edge';
 
 export const getStaticProps: GetStaticProps = async () => {
   const posts = filterPosts(await getPosts())
